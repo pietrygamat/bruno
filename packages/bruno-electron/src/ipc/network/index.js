@@ -205,16 +205,13 @@ const configureRequest = async (
   if (request.oauth2) {
     let requestCopy = cloneDeep(request);
     switch (request?.oauth2?.grantType) {
-      case 'authorization_code':
+      case 'authorization_code': {
         interpolateVars(requestCopy, envVars, collectionVariables, processEnvVars);
-        const { data: authorizationCodeData, url: authorizationCodeAccessTokenUrl } =
-          await resolveOAuth2AuthorizationCodeAccessToken(requestCopy, collectionUid);
-        request.method = 'POST';
-        request.headers['content-type'] = 'application/x-www-form-urlencoded';
-        request.data = authorizationCodeData;
-        request.url = authorizationCodeAccessTokenUrl;
+        const { accessToken } = await resolveOAuth2AuthorizationCodeAccessToken(requestCopy, collectionUid);
+        request.headers['Authorization'] = `Bearer ${accessToken}`;
         break;
-      case 'client_credentials':
+      }
+      case 'client_credentials': {
         interpolateVars(requestCopy, envVars, collectionVariables, processEnvVars);
         const { data: clientCredentialsData, url: clientCredentialsAccessTokenUrl } =
           await transformClientCredentialsRequest(requestCopy);
@@ -223,7 +220,8 @@ const configureRequest = async (
         request.data = clientCredentialsData;
         request.url = clientCredentialsAccessTokenUrl;
         break;
-      case 'password':
+      }
+      case 'password': {
         interpolateVars(requestCopy, envVars, collectionVariables, processEnvVars);
         const { data: passwordData, url: passwordAccessTokenUrl } = await transformPasswordCredentialsRequest(
           requestCopy
@@ -233,11 +231,13 @@ const configureRequest = async (
         request.data = passwordData;
         request.url = passwordAccessTokenUrl;
         break;
-      case 'implicit':
+      }
+      case 'implicit': {
         interpolateVars(requestCopy, envVars, collectionVariables, processEnvVars);
         const { accessToken } = await getOAuth2ImplicitToken(requestCopy, collectionUid);
         request.headers['Authorization'] = `Bearer ${accessToken}`;
         break;
+      }
     }
   }
 

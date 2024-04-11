@@ -2,6 +2,7 @@ const { get, cloneDeep } = require('lodash');
 const crypto = require('crypto');
 const { authorizeUserInWindow, authorizeUserInWindowImplicit } = require('./authorize-user-in-window');
 const Oauth2Store = require('../../store/oauth2');
+const { makeAxiosInstance } = require('./axios-instance');
 
 const generateCodeVerifier = () => {
   return crypto.randomBytes(22).toString('hex');
@@ -37,10 +38,16 @@ const resolveOAuth2AuthorizationCodeAccessToken = async (request, collectionUid)
   }
 
   const url = requestCopy?.oauth2?.accessTokenUrl;
-  return {
-    data,
-    url
-  };
+
+  request.method = 'POST';
+  request.headers['content-type'] = 'application/x-www-form-urlencoded';
+  request.data = data;
+  request.url = url;
+
+  const axiosInstance = makeAxiosInstance();
+  let response = await axiosInstance(request);
+  let accessToken = JSON.parse(response.data).access_token;
+  return { accessToken };
 };
 
 const getOAuth2AuthorizationCode = (request, codeChallenge, collectionUid) => {
